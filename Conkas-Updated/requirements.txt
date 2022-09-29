@@ -1,0 +1,8 @@
+pyevmasm
+cbor2
+z3-solver
+pycryptodome
+py-solc-x
+solidity_parser
+antlr4-python3-runtime==4.7.2
+future
