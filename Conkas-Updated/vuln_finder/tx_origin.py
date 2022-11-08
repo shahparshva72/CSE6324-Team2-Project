@@ -1,14 +1,18 @@
+import logging
+
 from rattle import SSABasicBlock
 from sym_exec.trace import Trace
 from sym_exec.utils import get_argument_value
 
 from vuln_finder.vulnerability import Vulnerability
 from vuln_finder import vulnerability_finder
-from sym_exec.utils import MAX_UVALUE
 
 TX_ORIGIN_VULN = "TX.ORIGIN"
 TX_ORIGIN_INSTRUCTION = "ORIGIN"
 MSG_SENDER_INSTRUCTION = "CALLER"
+JUMPI_INSTRUCTION = "JUMPI"
+
+logger = logging.getLogger(__name__)
 
 
 def __find_instruction(block: SSABasicBlock, instruction_name: str):
@@ -16,19 +20,35 @@ def __find_instruction(block: SSABasicBlock, instruction_name: str):
     for instruction in block.insns:
         if instruction.insn.name == instruction_name:
             instructions.append(instruction)
+
+    print("Instructions::", instructions)
     return instructions
 
 
 def tx_origin_analyse(traces: [Trace], find_all):
-    all_vulns = set()
-    analyzed_constraints = False
-    exist_constraints = False
-    block_analyzed = None
-    analyzed_blocks = set()
-    offset = None
-    instruction_offset = None
+        all_vulns = set()
+        analyzed_blocks = set()
+        for trace in traces:
+            if trace.state.reverted:
+                continue
+            for analyzed_block in trace.analyzed_blocks:
+                if analyzed_block in analyzed_blocks:
+                    continue
+                for instruction in analyzed_block.block.insns:
+                    instruction_name = instruction.insn.name
+                    vuln = None
+                    if instruction_name == JUMPI_INSTRUCTION:
+                        print(f"Instruction Found {JUMPI_INSTRUCTION}")
+                    elif instruction_name == TX_ORIGIN_INSTRUCTION:
+                        print(f"Instruction Found {TX_ORIGIN_INSTRUCTION}")
+                    if vuln:
+                        all_vulns.add(vuln)
+                        if not find_all:
+                            return all_vulns
 
-    return all_vulns
+                analyzed_blocks.add(analyzed_block)
+
+        return all_vulns
 
 # //SPDX-License-Identifier: Unlicense
 # pragma solidity ^0.8.0;
